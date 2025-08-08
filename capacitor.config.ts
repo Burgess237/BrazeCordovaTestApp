@@ -15,8 +15,8 @@ const config: CapacitorConfig = {
   cordova: {
     preferences: {
       // Braze Android
-      'com.braze.api_key': process.env['BRAZE_ANDROID_KEY'] ?? '',
-      'com.braze.android_api_endpoint': process.env['BRAZE_ENDPOINT'] ?? '',
+      'com.braze.android_api_key': '99548b24-d0f7-4a17-b8f5-ac6861a844dd',
+      'com.braze.android_api_endpoint': 'https://sdk.iad-07.braze.com',
       'com.braze.android_fcm_sender_id': SENDER_ID ? `str_${SENDER_ID}` : '',
       'com.braze.firebase_cloud_messaging_registration_enabled': 'true',
       'com.braze.is_firebase_messaging_service_on_new_token_registration_enabled': 'true',

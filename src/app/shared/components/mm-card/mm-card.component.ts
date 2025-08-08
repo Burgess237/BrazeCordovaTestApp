@@ -1,6 +1,16 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ImageLoaderComponent } from '@components/image-loader/image-loader.component';
-import { IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonImg } from '@ionic/angular/standalone';
+import {
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
+  IonImg,
+  IonIcon,
+  IonButton
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { closeCircleOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-mm-card',
@@ -8,7 +18,7 @@ import { IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonImg } from '@i
     <ion-card-header>
       @if (title(); as title) {
       <ion-card-title>
-        <div class="flex-row align-items-center">
+        <div class="flex-row align-items-center" [class]="showDelete() ? 'justify-content-between' : ''">
           @if(showIcon()) {
           <div class="m-r-1">
             <app-image-loader
@@ -20,6 +30,11 @@ import { IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonImg } from '@i
             ></app-image-loader>
           </div>
           } {{ title }}
+          @if(showDelete()) {
+          <ion-button fill="clear" class="m-l-2" (click)="onDeleteClick($event)">
+            <ion-icon slot="icon-only" name="close-circle-outline" color="danger"></ion-icon>
+          </ion-button>
+          }
         </div>
       </ion-card-title>
       }
@@ -31,9 +46,19 @@ import { IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonImg } from '@i
   </ion-card>`,
   styles: [],
   standalone: true,
-  imports: [IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonImg, ImageLoaderComponent]
+  imports: [IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonImg, ImageLoaderComponent, IonIcon, IonButton]
 })
 export class MmCardComponent {
   title = input('Mama Money');
   showIcon = input(true);
+  showDelete = input(false);
+  onDelete = output<Event>();
+
+  constructor() {
+    addIcons({ closeCircleOutline });
+  }
+
+  onDeleteClick($event: Event) {
+    this.onDelete.emit($event);
+  }
 }

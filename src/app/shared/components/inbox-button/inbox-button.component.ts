@@ -1,8 +1,10 @@
-import { AfterViewInit, Component, input, signal } from '@angular/core';
-import { IonButton, IonIcon, IonAccordion } from '@ionic/angular/standalone';
+import { AfterViewInit, Component, inject, input, signal } from '@angular/core';
+import { IonButton, IonIcon, IonAccordion, ModalController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { notificationsOutline } from 'ionicons/icons';
 import anime, { AnimeInstance } from 'animejs';
+import { InboxModalComponent } from '@components/inbox-modal/inbox-modal.component';
+import { BrazeService } from '@services/braze.service';
 
 @Component({
   selector: 'app-inbox-button',
@@ -42,6 +44,8 @@ import anime, { AnimeInstance } from 'animejs';
 })
 export class InboxButtonComponent implements AfterViewInit {
   readonly slot = input<IonAccordion['toggleIconSlot']>();
+  private modalCtrl = inject(ModalController);
+  private brazeService = inject(BrazeService);
   unreadMessages = signal(false);
   private shakeAnimation?: AnimeInstance;
 
@@ -49,14 +53,12 @@ export class InboxButtonComponent implements AfterViewInit {
     addIcons({ notificationsOutline });
   }
 
-  showInbox(): void {
-    // TODO: Show Inbox component in Modal when tapping Bell icon
+  async showInbox(): Promise<void> {
+    const modal = await this.modalCtrl.create({
+      component: InboxModalComponent
+    });
+    modal.present();
   }
-
-  // TODO: When receiving/reading new Braze inbox message, update notification state.
-  // Icon should play the shake animation when new unread messages are received.
-  //   this.unreadMessages = true;
-  //   this.shakeAnimation?.restart();
 
   ngAfterViewInit(): void {
     this.shakeAnimation = anime({
@@ -75,6 +77,14 @@ export class InboxButtonComponent implements AfterViewInit {
       easing: 'easeInOutSine',
       duration: 2000,
       autoplay: false
+    });
+
+    this.brazeService.contentCard$.subscribe((cards) => {
+      console.log(cards);
+      this.unreadMessages.set(cards.length > 0);
+      if (this.unreadMessages()) {
+        this.shakeAnimation?.restart();
+      }
     });
   }
 }

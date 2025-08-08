@@ -1,13 +1,15 @@
-import { inject, Injectable } from '@angular/core';
-import { BrazePushNotification } from '@models/braze/braze-push-notification';
+import { inject, Injectable, signal } from '@angular/core';
+import { BrazePushNotification, BrazeParsedExtra } from '@models/braze/braze-push-notification';
 import { PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
 import { HttpClient } from '@angular/common/http';
+import { BrazeService } from './braze.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PushNotificationService {
-  private httpClient = inject(HttpClient);
+  readonly pushNotifications = signal<any[]>([]);
+  private brazeService = inject(BrazeService);
 
   init() {
     PushNotifications.addListener('registration', (token) => {
@@ -17,11 +19,30 @@ export class PushNotificationService {
     PushNotifications.addListener(
       'pushNotificationReceived',
       (notification: PushNotificationSchema | BrazePushNotification) => {
-        // TODO: Implement content card checking functionality when receiving Braze push notification with type === 'inbox' in "Extra's"
+        console.log('~ PushNotificationService ~ notification:', notification);
+        const brazePushNotification = notification as BrazePushNotification;
+        if (brazePushNotification.data?.extra) {
+          try {
+            const extras = JSON.parse(brazePushNotification.data.extra) as BrazeParsedExtra;
+            if (extras.type === 'inbox') {
+              this.pushNotifications.update((prev) => [...prev, brazePushNotification]);
+            }
+          } catch (error) {
+            console.error('Error parsing Braze push notification extras:', error);
+          }
+        }
       }
     );
 
     this.registerPush();
+    this.brazeService
+      .initialize()
+      .then(() => {
+        console.log('Braze service initialized');
+      })
+      .catch((error) => {
+        console.error('Error initializing Braze service:', error);
+      });
   }
 
   async registerPush(): Promise<void> {
@@ -35,29 +56,5 @@ export class PushNotificationService {
       // Ask iOS user for permission/auto grant android permission
       await PushNotifications.register();
     }
-  }
-
-  sendPushNotification(notification: any): void {
-    const url = 'https://sdk.iad-07.braze.com/api/v3/messages/send';
-    const body = {
-      messages: {
-        push: {
-          alert: 'You have a new message!',
-          title: 'Hello from Angular!',
-          external_user_ids: ['user123'],
-          platform: 'android' // or "ios"
-        }
-      }
-    };
-
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer 99548b24-d0f7-4a17-b8f5-ac6861a844dd'
-    };
-
-    this.httpClient.post(url, body, { headers }).subscribe({
-      next: (res) => console.log('Sent notification!', res),
-      error: (err) => console.error('Error sending notification', err)
-    });
   }
 }
