@@ -1,22 +1,24 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { BrazePushNotification, BrazeParsedExtra } from '@models/braze/braze-push-notification';
-import { PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
-import { HttpClient } from '@angular/common/http';
-import { BrazeService } from './braze.service';
+import { ActionPerformed, PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
+import { Store } from '@ngxs/store';
+import { RefreshContentCards } from '../state/contentCards.actions';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PushNotificationService {
-  readonly pushNotifications = signal<any[]>([]);
-  private brazeService = inject(BrazeService);
+  private store = inject(Store);
 
-  init() {
+  async init() {
+    //All documention says this need to be at the end, but it only works when it's here.
+
+    await this.registerPush();
     PushNotifications.addListener('registration', (token) => {
       console.log('~ PushNotificationService ~ token:', token);
     });
 
-    PushNotifications.addListener(
+    await PushNotifications.addListener(
       'pushNotificationReceived',
       (notification: PushNotificationSchema | BrazePushNotification) => {
         console.log('~ PushNotificationService ~ notification:', notification);
@@ -25,7 +27,7 @@ export class PushNotificationService {
           try {
             const extras = JSON.parse(brazePushNotification.data.extra) as BrazeParsedExtra;
             if (extras.type === 'inbox') {
-              this.pushNotifications.update((prev) => [...prev, brazePushNotification]);
+              this.store.dispatch(new RefreshContentCards());
             }
           } catch (error) {
             console.error('Error parsing Braze push notification extras:', error);
@@ -34,15 +36,20 @@ export class PushNotificationService {
       }
     );
 
-    this.registerPush();
-    this.brazeService
-      .initialize()
-      .then(() => {
-        console.log('Braze service initialized');
-      })
-      .catch((error) => {
-        console.error('Error initializing Braze service:', error);
-      });
+    await PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
+      console.log('~ PushNotificationService ~ action:', notification);
+      const brazePushNotification = notification.notification as BrazePushNotification;
+      if (brazePushNotification.data?.extra) {
+        try {
+          const extras = JSON.parse(brazePushNotification.data.extra) as BrazeParsedExtra;
+          if (extras.type === 'inbox') {
+            this.store.dispatch(new RefreshContentCards());
+          }
+        } catch (error) {
+          console.error('Error parsing Braze push notification extras on action:', error);
+        }
+      }
+    });
   }
 
   async registerPush(): Promise<void> {

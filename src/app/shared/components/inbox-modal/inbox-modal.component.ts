@@ -1,6 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MmCardComponent } from '../mm-card/mm-card.component';
-import { BrazeService } from '@services/braze.service';
 import {
   IonHeader,
   IonToolbar,
@@ -13,6 +12,9 @@ import {
 } from '@ionic/angular/standalone';
 import { Router, RouterLink } from '@angular/router';
 import { BrazeContentCard } from '@models/braze/braze-content-card';
+import { select, Store } from '@ngxs/store';
+import { ContentCardsState } from '../../state/contentCards.state';
+import { ContentCardTapped, RemoveContentCard } from '../../state/contentCards.actions';
 
 @Component({
   selector: 'app-inbox-modal',
@@ -48,24 +50,17 @@ import { BrazeContentCard } from '@models/braze/braze-content-card';
   standalone: true
 })
 export class InboxModalComponent {
-  private brazeService = inject(BrazeService);
-  contentCards = signal<BrazeContentCard[]>([]);
   private modalController = inject(ModalController);
   private alertController = inject(AlertController);
-  private router = inject(Router);
+  private store = inject(Store);
+  contentCards = select(ContentCardsState.contentCards);
 
-  constructor() {
-    this.brazeService.contentCard$.subscribe((res) => {
-      this.contentCards.set(res);
-    });
-
-    this.brazeService.getContentCards();
-  }
+  constructor() {}
 
   cardClick(contentCard: BrazeContentCard): void {
-    this.modalController.dismiss();
-    this.brazeService.logContentCardImpression(contentCard.id);
-    this.router.navigate(['complete']);
+    this.store.dispatch(new ContentCardTapped(contentCard.id)).subscribe((res) => {
+      this.modalController.dismiss();
+    });
   }
 
   async onDelete($event: Event, contentCard: BrazeContentCard) {
@@ -79,10 +74,7 @@ export class InboxModalComponent {
         {
           text: 'yes',
           handler: () => {
-            this.contentCards.update((cards) => {
-              return cards.filter((card) => card.id !== contentCard.id);
-            });
-            this.brazeService.logContentCardDismissed(contentCard.id);
+            this.store.dispatch(new RemoveContentCard(contentCard.id));
           }
         }
       ]

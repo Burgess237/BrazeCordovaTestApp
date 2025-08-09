@@ -42,6 +42,8 @@
     "@capacitor/push-notifications": "^6.0.4",
     "@capacitor/status-bar": "6.0.2",
     "@ionic/angular": "^8.0.0",
+    "@ngxs/router-plugin": "^18.1.6",
+    "@ngxs/store": "^18.0.0",
     "@types/cordova": "^11.0.3",
     "animejs": "^3.2.2",
     "braze-cordova-sdk": "github:braze-inc/braze-cordova-sdk#master",

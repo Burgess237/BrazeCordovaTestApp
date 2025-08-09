@@ -1,10 +1,11 @@
 import { Component, inject, NgZone } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
-import { PushNotificationService } from '@services/push-notification.service';
-import { Platform } from '@ionic/angular';
 import { App } from '@capacitor/app';
 import { Router } from '@angular/router';
-import { ToastController } from '@ionic/angular/standalone';
+import { Store } from '@ngxs/store';
+import { RefreshContentCards } from './shared/state/contentCards.actions';
+import { Platform } from '@ionic/angular';
+import { PushNotificationService } from '@services/push-notification.service';
 
 @Component({
   selector: 'app-root',
@@ -15,22 +16,26 @@ import { ToastController } from '@ionic/angular/standalone';
 export class AppComponent {
   private zone = inject(NgZone);
   private router = inject(Router);
-  private toastController = inject(ToastController);
+  private store = inject(Store);
+  private plaform = inject(Platform);
+  private pushNotificationService = inject(PushNotificationService);
+
   constructor() {
+    this.pushNotificationService.init();
     App.addListener('appUrlOpen', (event: any) => {
+      console.log('App URL Opened:', event);
       this.zone.run(() => {
-        this.toast(event);
+        const url = new URL(event.url);
+        console.log('App URL Opened:', url);
+        if (url.protocol === 'za.co.mamamoney.assessments.frontend') {
+          const path = url.hostname === 'complete' ? '/complete' : '/';
+          this.router.navigate([path]);
+        }
       });
     });
-  }
 
-  async toast(event: any) {
-    const toast = await this.toastController.create({
-      message: `${JSON.stringify(event)}`,
-      duration: 1500,
-      position: 'bottom'
+    this.plaform.ready().then(() => {
+      this.store.dispatch(new RefreshContentCards());
     });
-
-    await toast.present();
   }
 }

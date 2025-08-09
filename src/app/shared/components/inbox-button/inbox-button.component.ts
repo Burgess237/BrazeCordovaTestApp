@@ -1,10 +1,11 @@
-import { AfterViewInit, Component, inject, input, signal } from '@angular/core';
+import { AfterViewInit, Component, inject, input, computed, effect, signal } from '@angular/core';
 import { IonButton, IonIcon, IonAccordion, ModalController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { notificationsOutline } from 'ionicons/icons';
 import anime, { AnimeInstance } from 'animejs';
 import { InboxModalComponent } from '@components/inbox-modal/inbox-modal.component';
-import { BrazeService } from '@services/braze.service';
+import { select, Store } from '@ngxs/store';
+import { ContentCardsState } from '../../state/contentCards.state';
 
 @Component({
   selector: 'app-inbox-button',
@@ -44,16 +45,27 @@ import { BrazeService } from '@services/braze.service';
 })
 export class InboxButtonComponent implements AfterViewInit {
   readonly slot = input<IonAccordion['toggleIconSlot']>();
+  private store = inject(Store);
+  private contentCards = this.store.select(ContentCardsState.contentCards);
   private modalCtrl = inject(ModalController);
-  private brazeService = inject(BrazeService);
   unreadMessages = signal(false);
   private shakeAnimation?: AnimeInstance;
 
   constructor() {
     addIcons({ notificationsOutline });
+    //use observable because it will not be affected by signal reactivity
+    this.contentCards.subscribe((cards) => {
+      this.unreadMessages.set(cards.length > 0);
+      if (cards.length > 0 && !this.shakeAnimation?.began) {
+        this.shakeAnimation?.play();
+      } else {
+        this.shakeAnimation?.restart();
+      }
+    });
   }
 
   async showInbox(): Promise<void> {
+    this.unreadMessages.set(false);
     const modal = await this.modalCtrl.create({
       component: InboxModalComponent
     });
@@ -77,14 +89,6 @@ export class InboxButtonComponent implements AfterViewInit {
       easing: 'easeInOutSine',
       duration: 2000,
       autoplay: false
-    });
-
-    this.brazeService.contentCard$.subscribe((cards) => {
-      console.log(cards);
-      this.unreadMessages.set(cards.length > 0);
-      if (this.unreadMessages()) {
-        this.shakeAnimation?.restart();
-      }
     });
   }
 }
