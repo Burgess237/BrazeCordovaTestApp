@@ -14,28 +14,20 @@ import { PushNotificationService } from '@services/push-notification.service';
   imports: [IonApp, IonRouterOutlet]
 })
 export class AppComponent {
-  private zone = inject(NgZone);
-  private router = inject(Router);
   private store = inject(Store);
   private plaform = inject(Platform);
   private pushNotificationService = inject(PushNotificationService);
-
+  private router = inject(Router);
   constructor() {
     this.pushNotificationService.init();
-    App.addListener('appUrlOpen', (event: any) => {
-      console.log('App URL Opened:', event);
-      this.zone.run(() => {
-        const url = new URL(event.url);
-        console.log('App URL Opened:', url);
-        if (url.protocol === 'za.co.mamamoney.assessments.frontend') {
-          const path = url.hostname === 'complete' ? '/complete' : '/';
-          this.router.navigate([path]);
-        }
-      });
-    });
-
     this.plaform.ready().then(() => {
       this.store.dispatch(new RefreshContentCards());
+    });
+    App.addListener('appUrlOpen', (data: any) => {
+      let url = data.url.split('za.co.mamamoney.assessments.frontend://')[1];
+      if (url === 'inbox') {
+        this.router.navigate(['complete']);
+      }
     });
   }
 }

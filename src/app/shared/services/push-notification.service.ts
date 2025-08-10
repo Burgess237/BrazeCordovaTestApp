@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { BrazePushNotification, BrazeParsedExtra } from '@models/braze/braze-push-notification';
 import { ActionPerformed, PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
 import { Store } from '@ngxs/store';
-import { RefreshContentCards } from '../state/contentCards.actions';
+import { ContentCardTapped, RefreshContentCards } from '../state/contentCards.actions';
 
 @Injectable({
   providedIn: 'root'
@@ -37,13 +37,15 @@ export class PushNotificationService {
     );
 
     await PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
-      console.log('~ PushNotificationService ~ action:', notification);
+      console.log('~ PushNotificationService ~ pushNotificationActionPerformed:', JSON.stringify(notification));
       const brazePushNotification = notification.notification as BrazePushNotification;
       if (brazePushNotification.data?.extra) {
         try {
           const extras = JSON.parse(brazePushNotification.data.extra) as BrazeParsedExtra;
           if (extras.type === 'inbox') {
+            //This is the same as if we'd opened it in the app and then tapped it
             this.store.dispatch(new RefreshContentCards());
+            this.store.dispatch(new ContentCardTapped(brazePushNotification.id));
           }
         } catch (error) {
           console.error('Error parsing Braze push notification extras on action:', error);
