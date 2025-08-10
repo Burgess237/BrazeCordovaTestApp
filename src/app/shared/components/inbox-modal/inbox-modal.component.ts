@@ -40,10 +40,10 @@ import { DatePipe } from '@angular/common';
         (onDelete)="onDelete($event, contentCard)"
         [showDelete]="true"
       >
-        <ion-text color="dark">
+        <ion-text color="medium">
           <p>{{ contentCard.cardDescription }}</p>
         </ion-text>
-        <ion-text color="medium">
+        <ion-text>
           <p>{{ contentCard.created * 1000 | date : 'dd.MM.yyyy hh:mm' }}</p>
         </ion-text>
       </app-mm-card>
