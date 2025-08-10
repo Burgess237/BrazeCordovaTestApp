@@ -1,5 +1,5 @@
 .delete-message-alert {
-  &-button {
-    color: var(--ion-text-color) !important;
+  .alert-button {
+    color: var(--ion-color-dark) !important;
   }
 }

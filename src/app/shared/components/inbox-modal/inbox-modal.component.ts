@@ -8,13 +8,15 @@ import {
   IonTitle,
   ModalController,
   IonContent,
-  AlertController
+  AlertController,
+  IonText
 } from '@ionic/angular/standalone';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { BrazeContentCard } from '@models/braze/braze-content-card';
 import { select, Store } from '@ngxs/store';
 import { ContentCardsState } from '../../state/contentCards.state';
 import { ContentCardTapped, RemoveContentCard } from '../../state/contentCards.actions';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-inbox-modal',
@@ -38,15 +40,34 @@ import { ContentCardTapped, RemoveContentCard } from '../../state/contentCards.a
         (onDelete)="onDelete($event, contentCard)"
         [showDelete]="true"
       >
-        <p class="m-b-2">{{ contentCard.cardDescription }}</p>
+        <ion-text color="dark">
+          <p>{{ contentCard.cardDescription }}</p>
+        </ion-text>
+        <ion-text color="medium">
+          <p>{{ contentCard.created * 1000 | date : 'dd.MM.yyyy hh:mm' }}</p>
+        </ion-text>
       </app-mm-card>
       } } @else {
-      <p class="m-b-2">You're all caught up! No new notifications.</p>
+      <ion-text color="dark" class="ion-text-center">
+        <p class="m-b-2">You're all caught up! No new notifications.</p>
+      </ion-text>
+
       }
     </ion-content>
   `,
   styles: [``],
-  imports: [MmCardComponent, IonHeader, RouterLink, IonToolbar, IonIcon, IonButton, IonTitle, IonContent],
+  imports: [
+    MmCardComponent,
+    IonHeader,
+    RouterLink,
+    IonToolbar,
+    IonIcon,
+    IonButton,
+    IonTitle,
+    IonContent,
+    DatePipe,
+    IonText
+  ],
   standalone: true
 })
 export class InboxModalComponent {
@@ -65,14 +86,19 @@ export class InboxModalComponent {
 
   async onDelete($event: Event, contentCard: BrazeContentCard) {
     $event.stopPropagation();
-    //Show Popup
     const deleteAlert = await this.alertController.create({
       header: 'Delete Message',
       message: 'Are you sure you would like to delete this message?',
+      mode: 'ios',
+      cssClass: 'delete-message-alert',
       buttons: [
-        'No',
         {
-          text: 'yes',
+          text: 'No',
+          role: 'cancel'
+        },
+        {
+          text: 'Yes',
+          role: 'destructive',
           handler: () => {
             this.store.dispatch(new RemoveContentCard(contentCard.id));
           }
