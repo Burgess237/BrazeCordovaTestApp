@@ -6,6 +6,7 @@ import anime, { AnimeInstance } from 'animejs';
 import { InboxModalComponent } from '@components/inbox-modal/inbox-modal.component';
 import { select, Store } from '@ngxs/store';
 import { ContentCardsState } from '../../state/contentCards.state';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-inbox-button',
@@ -54,7 +55,7 @@ export class InboxButtonComponent implements AfterViewInit {
   constructor() {
     addIcons({ notificationsOutline });
     //use observable because it will not be affected by signal reactivity
-    this.contentCards.subscribe((cards) => {
+    this.contentCards.pipe(takeUntilDestroyed()).subscribe((cards) => {
       this.unreadMessages.set(cards.length > 0);
       if (cards.length > 0 && !this.shakeAnimation?.began) {
         this.shakeAnimation?.play();
